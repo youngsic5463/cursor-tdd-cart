@@ -30,3 +30,16 @@ def apply_threshold_discount(amount):
         return round(amount * THRESHOLD_RATE)  # INV-2
 
     return amount  # INV-2
+
+
+def final_total(items, is_vip=False):
+    base = subtotal(items)  # INV-4
+    amount = apply_threshold_discount(base)  # INV-3
+    if is_vip:
+        return round(amount * 0.95)  # INV-3
+
+    return amount  # INV-4
+
+
+apply_threshold = apply_threshold_discount
+calculate_total = final_total
