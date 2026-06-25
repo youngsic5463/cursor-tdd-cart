@@ -2,9 +2,55 @@
 
 장바구니 할인 계산 로직을 TDD 방식으로 구현하는 연습 프로젝트입니다.
 
-상세 요구사항·Discovery 근거는 [docs/PRD.md](docs/PRD.md)를 참조하세요.
+**버전: v0.1 (Discovery)** · 상세 요구사항·Discovery 근거는 [docs/PRD.md](docs/PRD.md)를 참조하세요.
 
-**현재 단계: RED 준비** — 계약 ID별 실패 테스트 작성 전입니다. 구현은 아직 시작하지 않았습니다.
+**현재 단계: RED 준비** — 계약 ID별 실패 테스트 작성 전입니다. 구현(GREEN)은 아직 시작하지 않았습니다.
+
+---
+
+## 릴리스 노트 — v0.1 (Discovery)
+
+MomTest Discovery로 장바구니 할인 계약(`INV-*`, `E-*`)을 확정하고, Dual-Track TDD 실습을 위한 문서·스캐폴딩을 마련한 Discovery 릴리스입니다.
+
+### ✨ 기능
+
+_(이번 버전에는 사용자-facing 기능 구현이 포함되지 않습니다.)_
+
+### 🐛 버그 수정
+
+_(해당 없음)_
+
+### 🧹 기타
+
+**MomTest Discovery & 계약 문서화**
+
+- MomTest Product Discovery 세션 결과를 바탕으로 계약 ID(`INV-1` ~ `INV-4`, `E-1`, `E-2`)를 확정하고 README·PRD에 정리했습니다.
+- [docs/PRD.md](docs/PRD.md) — 제품 요구사항, Discovery 근거, ECB 아키텍처, OOS(범위 제외) 항목
+- Discovery 세션 보고서: [Report/02.REPORT.md](Report/02.REPORT.md)
+
+**프로젝트 스캐폴딩**
+
+- Python 3.12 + pytest 기반 프로젝트 구조 (`src/`, `tests/entity/`, `tests/boundary/`)
+- [AGENTS.md](AGENTS.md) — Dual-Track TDD 워크플로·커밋 규칙
+- `.cursor/rules/dual-track-tdd.mdc` — RED → GREEN → REFACTOR 작업 규칙
+
+**세션 아카이브 & Cursor 도구**
+
+- 대화 Transcript: [Prompting/02.Export-Transcript.md](Prompting/02.Export-Transcript.md)
+- `/export` Cursor Command — 세션 보고서·Transcript 자동 생성
+
+### 진행 상태
+
+| 항목 | 상태 |
+|------|------|
+| Discovery / 계약 확정 | ✅ 완료 |
+| RED (실패 테스트 작성) | 🔜 예정 |
+| GREEN (최소 구현) | ⏸ 미시작 |
+
+### 알려진 미확정 항목 (OOS)
+
+- `subtotal == 50,000` 문턱 할인 **포함 여부** — "넘으면"만 확인됨, RED 전 추가 MomTest 인터뷰 필요
+- 쿠폰, 배송비, 세금, 포인트 등 — 범위 제외
 
 ---
 
@@ -105,6 +151,51 @@ E-1, E-2는 입력 검증 경계에 가까운 규칙입니다. 본 실습에서�
 권장 RED 순서: INV-1 → INV-2 → INV-3 → INV-4 → E-1 → E-2
 
 구현 시 해당 줄에 충족한 계약 ID를 주석으로 표기합니다.
+
+---
+
+## REFACTOR 계획 (Track B · subtotal)
+
+Track B(E-1, E-2) GREEN 이후 `subtotal`의 **Mixed Responsibilities** 스멜을 해소하기 위한 구조 개선 계획입니다. 동작 변경 없이 E-2 검증만 private helper로 분리합니다.
+
+### 목적
+
+- E-2(`price` / `qty` 음수 검증)를 `_validate_line_items(items)`로 추출한다.
+- E-1(`items is None → TypeError`)은 `subtotal` 진입부에 그대로 둔다.
+- INV-1 합산 루프(`total += price * qty`)는 `subtotal`에 유지한다.
+
+### 변경 범위
+
+| 항목 | 내용 |
+|------|------|
+| 변경 파일 | `src/cart.py`만 |
+| 테스트 | `tests/` 수정 없음 |
+| 공개 API | `subtotal(items)` 시그니처·import 경로 불변 |
+
+### 제외
+
+- `sum()` 변환
+- `"price"` / `"qty"` 상수 추출
+- `apply_threshold_discount`, `final_total`, `THRESHOLD` 등 INV-2 이후 함수·상수
+
+### 동작 불변 체크리스트
+
+REFACTOR 전후 아래가 동일해야 합니다.
+
+| 계약 | 확인 항목 |
+|------|-----------|
+| E-1 | `subtotal(None)` → `TypeError`, 메시지 `"items must not be None"` |
+| E-2 | 음수 `price` / `qty` → `ValueError`, 메시지에 해당 **인덱스** 포함 (`index 0` 등) |
+| INV-1 | `subtotal([{"price": 1000, "qty": 3}, {"price": 2000, "qty": 2}]) == 7000` |
+
+### 완료 기준
+
+- REFACTOR **전** `pytest -q` GREEN
+- REFACTOR **후** `pytest -q` GREEN (동작 불변)
+
+### 예상 diff
+
+- `src/cart.py` **+3~5줄** (E-2 블록 추출 + `_validate_line_items(items)` 호출 1줄)
 
 ---
 
