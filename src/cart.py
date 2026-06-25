@@ -19,3 +19,13 @@ def subtotal(items):
         total += price * qty  # INV-1
 
     return total
+
+
+THRESHOLD = 50000
+
+
+def apply_threshold_discount(amount):
+    if amount >= THRESHOLD:  # INV-2
+        return round(amount * 0.9)  # INV-2
+
+    return amount  # INV-2
