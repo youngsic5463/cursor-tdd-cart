@@ -23,6 +23,7 @@ def subtotal(items):
 
 THRESHOLD = 50000
 THRESHOLD_RATE = 0.9
+VIP_RATE = 0.95
 
 
 def apply_threshold_discount(amount):
@@ -36,7 +37,7 @@ def final_total(items, is_vip=False):
     base = subtotal(items)  # INV-4
     amount = apply_threshold_discount(base)  # INV-3
     if is_vip:
-        return round(amount * 0.95)  # INV-3
+        return round(amount * VIP_RATE)  # INV-3
 
     return amount  # INV-4
 
